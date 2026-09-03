@@ -1,0 +1,234 @@
+body {
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    color: #17212b;
+    background: #edf3f1;
+}
+
+main {
+    width: min(92%, 860px);
+    margin: 0 auto;
+    padding: 56px 0 72px;
+}
+
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    margin: 0 0 12px;
+    color: #26766c;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+h1, h2, p {
+    margin-top: 0;
+}
+
+h1 {
+    max-width: 580px;
+    margin-bottom: 12px;
+    font-family: Georgia, serif;
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: .98;
+    letter-spacing: -1px;
+}
+
+.intro {
+    margin-bottom: 0;
+    color: #607078;
+    font-size: 15px;
+}
+
+.status-badge, .grade-status {
+    white-space: nowrap;
+    color: #26766c;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-badge span {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: #d49b41;
+}
+
+#score-form {
+    padding: 30px;
+    border: 1px solid #d6e1dd;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 18px 45px rgba(35, 61, 59, .08);
+}
+
+.form-heading, .result-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+}
+
+.form-heading {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2eae7;
+    margin-bottom: 8px;
+}
+
+h2 {
+    margin-bottom: 5px;
+    font-size: 22px;
+}
+
+.form-heading p {
+    margin-bottom: 0;
+    color: #82908f;
+    font-size: 13px;
+}
+
+.step {
+    color: #a4b1ae;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 17px 0;
+    border-bottom: 1px solid #e7eeeb;
+}
+
+.score label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.subject-number {
+    color: #d49b41;
+    font-family: Georgia, serif;
+    font-size: 14px;
+}
+
+.score input {
+    width: 92px;
+    padding: 11px 13px;
+    border: 1px solid #cbd9d5;
+    border-radius: 4px;
+    outline: none;
+    color: #17212b;
+    font-size: 16px;
+    text-align: right;
+}
+
+.score input:focus {
+    border-color: #26766c;
+    box-shadow: 0 0 0 3px rgba(38, 118, 108, .12);
+}
+
+button {
+    width: 100%;
+    padding: 14px 18px;
+    margin: 24px 0 0;
+    border: 0;
+    border-radius: 4px;
+    background: #26766c;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+}
+
+button:hover {
+    background: #1d5e57;
+    transform: translateY(-1px);
+}
+
+button span {
+    margin-left: 8px;
+    font-size: 18px;
+}
+
+#result {
+    margin-top: 28px;
+    padding: 30px;
+    border-radius: 8px;
+    background: #1d3538;
+    color: #fff;
+}
+
+.result-heading h2 {
+    margin-bottom: 0;
+}
+
+.grade-status {
+    color: #e4b967;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.result-card {
+    min-height: 110px;
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 5px;
+    background: rgba(255,255,255,.06);
+}
+
+.result-card.featured {
+    background: #d49b41;
+    color: #17212b;
+}
+
+.result-card span, .result-card small {
+    display: block;
+    font-size: 12px;
+    opacity: .75;
+}
+
+.result-card strong {
+    display: block;
+    margin: 15px 0 4px;
+    font-family: Georgia, serif;
+    font-size: 34px;
+}
+
+.above-eight, .result-message {
+    margin: 22px 0 0;
+    color: #d6e6e1;
+    font-size: 13px;
+}
+
+.result-message {
+    margin-top: 8px;
+    color: #e4b967;
+}
+
+@media (max-width: 620px) {
+    main { padding-top: 32px; }
+    .page-header { display: block; }
+    .status-badge { margin-top: 20px; }
+    #score-form, #result { padding: 22px; }
+    .result-grid { grid-template-columns: 1fr; }
+    .result-card { min-height: auto; }
+}

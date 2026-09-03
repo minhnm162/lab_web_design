@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Exam Score Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main>
+
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">STUDENT PORTAL / EXAM 2026</p>
+                <h1>Exam Score Dashboard</h1>
+                <p class="intro">Nhập điểm ba môn để xem nhanh kết quả tổng hợp của bạn.</p>
+            </div>
+            <div class="status-badge"><span></span> Ready to calculate</div>
+        </header>
+
+        <form id="score-form">
+            <div class="form-heading">
+                <div>
+                    <h2>Enter your scores</h2>
+                    <p>Thang điểm từ 0 đến 10</p>
+                </div>
+                <span class="step">01 / 01</span>
+            </div>
+
+            <div class="score">
+                <label for="mon1"><span class="subject-number">01</span>Subject 1</label>
+                <input
+                    id="mon1"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    required
+                >
+            </div>
+
+            <div class="score">
+                <label for="mon2"><span class="subject-number">02</span>Subject 2</label>
+                <input
+                    id="mon2"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    required
+                >
+            </div>
+
+            <div class="score">
+                <label for="mon3"><span class="subject-number">03</span>Subject 3</label>
+                <input
+                    id="mon3"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    required
+                >
+            </div>
+
+            <button type="submit">Calculate result <span aria-hidden="true">&#8594;</span></button>
+
+        </form>
+
+        <section id="result" aria-live="polite">
+            <div class="result-heading">
+                <div>
+                    <p class="eyebrow">YOUR PERFORMANCE</p>
+                    <h2>Result overview</h2>
+                </div>
+                <span id="grade-status" class="grade-status">Awaiting scores</span>
+            </div>
+            <div class="result-grid">
+                <article class="result-card featured">
+                    <span>Average score</span>
+                    <strong id="average">--</strong>
+                    <small>out of 10</small>
+                </article>
+                <article class="result-card">
+                    <span>Total score</span>
+                    <strong id="total">--</strong>
+                    <small>out of 30</small>
+                </article>
+                <article class="result-card">
+                    <span>Highest score</span>
+                    <strong id="highest">--</strong>
+                    <small id="highest-subject">No result yet</small>
+                </article>
+            </div>
+            <p id="above8" class="above-eight">Enter scores to see subjects above 8.</p>
+            <p id="message" class="result-message"></p>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
