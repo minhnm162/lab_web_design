@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>House Price Prediction</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>House Price Prediction</h1>
+
+    <form id="houseForm">
+
+        <label for="area">Area (m²)</label>
+        <input
+            type="number"
+            id="area"
+            step="0.1"
+            required
+        >
+
+        <label for="bedrooms">Number of Bedrooms</label>
+        <input
+            type="number"
+            id="bedrooms"
+            min="0"
+            required
+        >
+
+        <label for="location">Location</label>
+        <select id="location">
+            <option value="other">Other</option>
+            <option value="hanoi">Hanoi</option>
+            <option value="hcmc">Ho Chi Minh City</option>
+        </select>
+
+        <button type="submit">
+            Predict Price
+        </button>
+
+    </form>
+
+    <div id="result"></div>
+
+
+    <script>
+        const form = document.getElementById("houseForm");
+        const result = document.getElementById("result");
+
+        form.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const area = document.getElementById("area").value;
+            const bedrooms = document.getElementById("bedrooms").value;
+            const location = document.getElementById("location").value;
+
+            const params = new URLSearchParams({
+                area: area,
+                bedrooms: bedrooms,
+                location: location
+            });
+
+            try {
+
+                // Relative URL works because the frontend and API
+                // are served from the same origin.
+                const response = await fetch(`/predict?${params}`);
+
+                if (!response.ok) {
+                    throw new Error("Request failed");
+                }
+
+                const data = await response.json();
+
+                const formattedPrice =
+                    Number(data.predicted_price).toLocaleString("en-US");
+
+                result.textContent =
+                    `Predicted Price: ${formattedPrice} VND`;
+
+            } catch (error) {
+
+                result.textContent =
+                    "Error: Could not get the predicted price.";
+
+            }
+
+        });
+    </script>
+
+</body>
+</html>
