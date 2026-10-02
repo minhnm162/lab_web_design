@@ -2,3 +2,4 @@
 envkhanh/
 __pycache__/
 *.pyc
+.venv-win/

@@ -1,213 +1,259 @@
-from pathlib import Path
-import time
-from uuid import uuid4
-
-from fastapi import APIRouter, Cookie, Depends, FastAPI, Header, HTTPException, Query, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 
-class ItemIn(BaseModel):
-    name: str = Field(min_length=1)
-    price: float = Field(gt=0)
+class ItemCreate(BaseModel):
+    name: str
+    price: float
 
 
-class Item(ItemIn):
+class ItemUpdate(BaseModel):
+    name: str | None = None
+    price: float | None = None
+
+
+class ItemPublic(BaseModel):
     id: int
+    name: str
+    price: float
 
 
-class CartIn(BaseModel):
-    item_id: int
-    quantity: int = Field(ge=1)
+class ItemListResponse(BaseModel):
+    items: list[ItemPublic]
+    total: int
+    skip: int
+    limit: int
+
+
+class HousePriceRequest(BaseModel):
+    area_sqm: float = Field(gt=0)
+    bedrooms: int = Field(ge=0)
+    distance_to_center_km: float
+
+
+class HousePricePrediction(BaseModel):
+    predicted_price: float
+    currency: str = "VND"
+
+
+_items: list[ItemPublic] = []
+_next_id = 1
+
+
+def _find(item_id: int) -> ItemPublic | None:
+    for item in _items:
+        if item.id == item_id:
+            return item
+
+    return None
+
+
+def _has_same_name(name: str, item_id: int | None = None) -> bool:
+    for item in _items:
+        if item_id is not None and item.id == item_id:
+            continue
+
+        if item.name.lower() == name.lower():
+            return True
+
+    return False
 
 
 app = FastAPI()
-FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=True,
+app.mount(
+    "/static",
+    StaticFiles(directory="../frontend", html=True),
+    name="static"
 )
 
-items = [Item(id=1, name="Book", price=50000), Item(id=2, name="Pen", price=5000)]
-customers = [
-    {"id": 1, "name": "An", "email": "an@example.com"},
-    {"id": 2, "name": "Binh", "email": "binh@example.com"},
-]
-cart: list[dict] = []
-sessions: dict[str, dict] = {}
-next_id = 3
 
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start = time.perf_counter()
-    response = await call_next(request)
-    took = time.perf_counter() - start
-    response.headers["X-Process-Time"] = str(took)
-    print(f"{request.method} {request.url.path} -> {response.status_code} ({took:.3f}s)")
-    return response
-
-
-def pagination(skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
-    return {"skip": skip, "limit": limit}
-
-
-def verify_api_key(x_api_key: str | None = Header(default=None)):
-    if x_api_key != "expected-secret":
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-
-def get_data():
-    try:
-        yield {"items": items, "customers": customers}
-    finally:
-        print("Session closed")
-
-
-def get_session(response: Response, session_id: str | None = Cookie(default=None)):
-    session_id = session_id or str(uuid4())
-    sessions.setdefault(session_id, {})
-    response.set_cookie("session_id", session_id, httponly=True, samesite="lax")
-    return sessions[session_id]
-
-
-def find_item(item_id: int):
-    item = next((item for item in items if item.id == item_id), None)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
-
-
-admin = APIRouter(prefix="/admin", dependencies=[Depends(verify_api_key)])
-
-
-@app.get("/")
-def home():
-    return FileResponse(FRONTEND_DIR / "index.html")
-
-
-@app.get("/visits")
-def visits(response: Response, visits: str | None = Cookie(default=None)):
-    count = int(visits) + 1 if visits else 1
-    response.set_cookie("visits", str(count), httponly=True, samesite="lax")
-    return {"visits": count}
-
-
-def set_login_cookie(response: Response):
-    sessions.setdefault("abc123", {})
-    response.set_cookie("session_id", "abc123", httponly=True, samesite="lax")
-    return {"status": "logged in"}
-
-
-@app.get("/login")
-def login_get(response: Response):
-    return set_login_cookie(response)
-
-
-@app.post("/login")
-def login_post(response: Response):
-    return set_login_cookie(response)
-
-
-@app.get("/set")
-def set_session(session: dict = Depends(get_session)):
-    session["user_id"] = 42
-    return {"status": "set"}
-
-
-@app.get("/session")
-def read_session(session: dict = Depends(get_session)):
-    return session
-
-
-@app.get("/flash/set")
-def set_flash(session: dict = Depends(get_session)):
-    session["flash"] = "Item saved successfully"
-    return {"status": "flash set"}
-
-
-@app.get("/flash")
-def read_flash(session: dict = Depends(get_session)):
-    return {"message": session.pop("flash", None)}
-
-
-@app.get("/customers")
-def read_customers(page: dict = Depends(pagination), data: dict = Depends(get_data)):
-    return data["customers"][page["skip"]:page["skip"] + page["limit"]]
-
-
-@app.post("/card/add", status_code=201)
-def add_cart(data: CartIn):
-    item = find_item(data.item_id)
-    row = next((row for row in cart if row["item_id"] == item.id), None)
-    if row is None:
-        row = {"item_id": item.id, "name": item.name, "price": item.price, "quantity": 0}
-        cart.append(row)
-    row["quantity"] += data.quantity
-    row["total"] = row["price"] * row["quantity"]
-    return row
-
-
-@app.get("/cart")
-def read_cart():
-    return cart
-
-
-@admin.get("/items/me")
+@app.get("/items/me")
 def read_me():
     return "Welcome!"
 
 
-@admin.get("/items/{item_id}", response_model=Item)
+# GET AN ITEM
+@app.get("/items/{item_id}", response_model=ItemPublic)
 def read_item(item_id: int):
-    return find_item(item_id)
+    item = _find(item_id)
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    return item
 
 
-@admin.get("/items", response_model=list[Item])
+# GET ITEMS
+@app.get("/items", response_model=ItemListResponse)
 def read_items(
-    page: dict = Depends(pagination),
-    data: dict = Depends(get_data),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     q: str | None = Query(None, min_length=2),
+    min_price: float | None = None,
+    max_price: float | None = None,
+    sort_by: str = Query("id", pattern="^(id|name|price)$"),
+    order: str = Query("asc", pattern="^(asc|desc)$")
 ):
-    result = data["items"]
-    if q:
-        result = [item for item in result if q.lower() in item.name.lower()]
-    return result[page["skip"]:page["skip"] + page["limit"]]
+    result = _items
+
+    if q is not None:
+        result = [
+            item for item in result
+            if q.lower() in item.name.lower()
+        ]
+
+    if min_price is not None:
+        result = [
+            item for item in result
+            if item.price >= min_price
+        ]
+
+    if max_price is not None:
+        result = [
+            item for item in result
+            if item.price <= max_price
+        ]
+
+    total = len(result)
+
+    result = sorted(
+        result,
+        key=lambda item: getattr(item, sort_by),
+        reverse=order == "desc"
+    )
+
+    return ItemListResponse(
+        items=result[skip:skip + limit],
+        total=total,
+        skip=skip,
+        limit=limit
+    )
 
 
-@admin.post("/items", response_model=Item, status_code=201)
-def create_item(data: ItemIn):
-    global next_id
-    item = Item(id=next_id, name=data.name, price=data.price)
-    items.append(item)
-    next_id += 1
-    return item
+# CREATE AN ITEM
+@app.post("/items", response_model=ItemPublic, status_code=201)
+def create_item(data: ItemCreate):
+    global _next_id
+
+    if _has_same_name(data.name):
+        raise HTTPException(
+            status_code=409,
+            detail="Item with this name already exists"
+        )
+
+    newItem = ItemPublic(
+        id=_next_id,
+        name=data.name,
+        price=data.price
+    )
+
+    _items.append(newItem)
+    _next_id += 1
+
+    return newItem
 
 
-@admin.put("/items", response_model=Item)
-def update_item(data: Item):
-    item = find_item(data.id)
-    item.name = data.name
-    item.price = data.price
-    return item
+# UPDATE AN ITEM
+@app.put("/items/{item_id}", response_model=ItemPublic)
+def update_item(item_id: int, data: ItemCreate):
+    item = _find(item_id)
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    if data.name.lower() != item.name.lower() and _has_same_name(data.name, item.id):
+        raise HTTPException(
+            status_code=409,
+            detail="Item with this name already exists"
+        )
+
+    updateValue = ItemPublic(
+        id=item.id,
+        name=data.name,
+        price=data.price
+    )
+
+    index = _items.index(item)
+    _items[index] = updateValue
+
+    return updateValue
 
 
-@admin.delete("/items/{item_id}", status_code=204)
+# PATCH AN ITEM
+@app.patch("/items/{item_id}", response_model=ItemPublic)
+def patch_item(item_id: int, data: ItemUpdate):
+    item = _find(item_id)
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    updateData = data.model_dump(exclude_unset=True)
+
+    if "name" in updateData and updateData["name"] is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Name cannot be null"
+        )
+
+    if "price" in updateData and updateData["price"] is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Price cannot be null"
+        )
+
+    if "name" in updateData:
+        if updateData["name"].lower() != item.name.lower() and _has_same_name(updateData["name"], item.id):
+            raise HTTPException(
+                status_code=409,
+                detail="Item with this name already exists"
+            )
+
+    updateValue = ItemPublic(
+        id=item.id,
+        name=updateData.get("name", item.name),
+        price=updateData.get("price", item.price)
+    )
+
+    index = _items.index(item)
+    _items[index] = updateValue
+
+    return updateValue
+
+
+# DELETE AN ITEM
+@app.delete("/items/{item_id}", status_code=204)
 def delete_item(item_id: int):
-    items.remove(find_item(item_id))
+    item = _find(item_id)
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    _items.remove(item)
+
+    return None
 
 
-app.include_router(admin)
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+# PREDICT HOUSE PRICE
+@app.post("/predict/house-price", response_model=HousePricePrediction)
+def predict_house_price(data: HousePriceRequest):
+    predictedPrice = (
+        data.area_sqm * 15000000
+        - data.distance_to_center_km * 5000000
+        + data.bedrooms * 20000000
+    )
 
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    return HousePricePrediction(predicted_price=predictedPrice)
