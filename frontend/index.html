@@ -11,6 +11,23 @@
     <main>
       <h1>Items Management</h1>
 
+      <form id="item-form">
+        <h2>Add new Item</h2>
+
+        <label>
+          Name
+          <input id="name" type="text" />
+        </label>
+
+        <label>
+          Price
+          <input id="price" type="number" />
+        </label>
+
+        <button type="submit">Add</button>
+        <button type="button" onclick="clearForm()">Cancel</button>
+      </form>
+
       <button onclick="fetchData()">Fetch data</button>
 
       <table>
@@ -24,6 +41,21 @@
         </thead>
 
         <tbody></tbody>
+      </table>
+
+      <h2>Customers</h2>
+      <button onclick="fetchCustomers()">Fetch customers</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+
+        <tbody id="customers-body"></tbody>
       </table>
     </main>
 
